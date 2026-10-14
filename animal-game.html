@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بازی حیوانات</title>
+<style>
+  :root {
+    --bg: #fff1a8;
+    --ink: #3b2a00;
+    --sky: #aee3ff;
+    --grass: #58b947;
+    --grass-edge: #3a8a2c;
+    --btn: #ffffff;
+    --btn-edge: #e0c46a;
+    --good: #1b998b;
+    --good-edge: #11685f;
+    --bad: #ee4266;
+    --bad-edge: #a82745;
+    --accent: #ff8a3d;
+    --accent-edge: #c9601a;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #2a2410;
+      --ink: #fff4c8;
+      --sky: #27456b;
+      --grass: #3f8f33;
+      --grass-edge: #2a6422;
+      --btn: #fff4d6;
+      --btn-edge: #a8914a;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Vazirmatn", "Vazir", Tahoma, "Segoe UI", system-ui, sans-serif;
+    display: flex; justify-content: center;
+    padding: 16px;
+  }
+  .app { width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 14px; }
+
+  .top { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.1rem; }
+  .bar { flex: 1; height: 14px; background: rgba(0,0,0,.12); border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 999px; transition: width .35s ease; }
+  .stars { background: #ffd23f; color: #3a2c00; padding: 6px 14px; border-radius: 999px; box-shadow: 0 4px 0 #d8a800; white-space: nowrap; }
+
+  .question { text-align: center; font-size: 1.5rem; font-weight: 800; margin: 0; }
+
+  .stage {
+    position: relative; height: 250px; border-radius: 28px; overflow: hidden;
+    background: linear-gradient(var(--sky) 0 68%, var(--grass) 68% 100%);
+    box-shadow: 0 8px 0 var(--grass-edge);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sun { position: absolute; top: 16px; left: 20px; width: 46px; height: 46px; border-radius: 50%; background: #ffd23f; }
+  .cloud { position: absolute; top: 26px; right: 24px; font-size: 2.6rem; opacity: .9; }
+  .animal {
+    font-size: 8.5rem; line-height: 1; display: inline-block;
+    transform-origin: 50% 90%;
+    margin-top: 40px;
+    user-select: none;
+  }
+  .shadow { position: absolute; bottom: 36px; width: 110px; height: 16px; border-radius: 50%; background: rgba(0,0,0,.18); }
+
+  /* انیمیشن‌های مختلف برای حیوان‌ها */
+  .a-bounce { animation: bounce 1s ease-in-out infinite; }
+  .a-wiggle { animation: wiggle 1.1s ease-in-out infinite; }
+  .a-sway   { animation: sway 1.8s ease-in-out infinite; }
+  .a-hop    { animation: hop .9s cubic-bezier(.3,.7,.4,1) infinite; }
+  .a-pulse  { animation: pulse 1.2s ease-in-out infinite; }
+  .a-swim   { animation: swim 2s ease-in-out infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0) scale(1.05,.95); } 50% { transform: translateY(-34px) scale(.97,1.04); } }
+  @keyframes wiggle { 0%,100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
+  @keyframes sway   { 0%,100% { transform: translateX(-20px) rotate(-4deg); } 50% { transform: translateX(20px) rotate(4deg); } }
+  @keyframes hop    { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-46px) rotate(-6deg); } 70% { transform: translateY(-10px) rotate(4deg); } }
+  @keyframes pulse  { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+  @keyframes swim   { 0%,100% { transform: translateX(-34px) scaleX(1); } 49% { transform: translateX(34px) scaleX(1); } 51% { transform: translateX(34px) scaleX(-1); } 99% { transform: translateX(-34px) scaleX(-1); } }
+  .animal.happy { animation: happy .8s ease-in-out infinite; }
+  @keyframes happy { 0%,100% { transform: translateY(0) rotate(0); } 25% { transform: translateY(-40px) rotate(-12deg); } 75% { transform: translateY(-40px) rotate(12deg); } }
+
+  .msg { min-height: 3.2rem; text-align: center; font-size: 1.35rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .msg.good { color: var(--good); }
+  .msg.bad { color: var(--bad); }
+
+  .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .answers button {
+    font: inherit; font-size: 1.6rem; font-weight: 800; color: #3b2a00;
+    background: var(--btn); border: 0; border-radius: 22px;
+    min-height: 80px; padding: 10px;
+    box-shadow: 0 6px 0 var(--btn-edge); cursor: pointer;
+    transition: transform .08s, box-shadow .08s;
+  }
+  .answers button:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--btn-edge); }
+  .answers button:focus-visible, .big:focus-visible { outline: 4px solid var(--accent); outline-offset: 3px; }
+  .answers button.right { background: var(--good); color: #fff; box-shadow: 0 6px 0 var(--good-edge); }
+  .answers button.wrong { background: var(--bad); color: #fff; box-shadow: 0 6px 0 var(--bad-edge); animation: shake .35s; }
+  .answers.locked button { pointer-events: none; }
+  @keyframes shake { 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+
+  .big {
+    font: inherit; font-size: 1.5rem; font-weight: 800;
+    background: var(--accent); color: #fff; border: 0; border-radius: 22px;
+    padding: 16px 28px; box-shadow: 0 6px 0 var(--accent-edge); cursor: pointer;
+  }
+  .big:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--accent-edge); }
+  #nextWrap { display: none; text-align: center; }
+
+  .end { display: none; text-align: center; flex-direction: column; gap: 18px; align-items: center; padding-top: 24px; }
+  .end .trophy { font-size: 6rem; line-height: 1; animation: happy .8s ease-in-out infinite; }
+  .end h1 { margin: 0; font-size: 2rem; }
+  .end p { margin: 0; font-size: 1.4rem; font-weight: 700; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animal, .end .trophy, .answers button.wrong { animation: none !important; }
+    .bar > i { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="game">
+    <div class="top">
+      <div class="bar"><i id="bar"></i></div>
+      <div class="stars">⭐ <span id="score">۰</span></div>
+    </div>
+    <p class="question" style="margin-top:12px">این چه حیوانی است؟</p>
+    <div class="stage" style="margin-top:12px">
+      <div class="sun"></div>
+      <div class="cloud">☁️</div>
+      <div class="shadow"></div>
+      <div class="animal" id="animal"></div>
+    </div>
+    <div class="msg" id="msg"></div>
+    <div class="answers" id="answers"></div>
+    <div id="nextWrap"><button class="big" id="next">حیوان بعدی</button></div>
+  </div>
+
+  <div class="end" id="end">
+    <div class="trophy">🏆</div>
+    <h1>آفرین قهرمان!</h1>
+    <p id="final"></p>
+    <button class="big" id="again">دوباره بازی کن</button>
+  </div>
+</div>
+
+<script>
+  // حیوان‌ها: شکل، نام و نوع انیمیشن
+  const ANIMALS = [
+    { e: "🦁", n: "شیر", a: "a-pulse" },
+    { e: "🐘", n: "فیل", a: "a-sway" },
+    { e: "🐵", n: "میمون", a: "a-bounce" },
+    { e: "🐱", n: "گربه", a: "a-wiggle" },
+    { e: "🐶", n: "سگ", a: "a-hop" },
+    { e: "🐰", n: "خرگوش", a: "a-hop" },
+    { e: "🐧", n: "پنگوئن", a: "a-wiggle" },
+    { e: "🐟", n: "ماهی", a: "a-swim" },
+    { e: "🐸", n: "قورباغه", a: "a-hop" },
+    { e: "🐔", n: "مرغ", a: "a-bounce" },
+    { e: "🐴", n: "اسب", a: "a-bounce" },
+    { e: "🐮", n: "گاو", a: "a-sway" },
+    { e: "🐻", n: "خرس", a: "a-sway" },
+    { e: "🐢", n: "لاک‌پشت", a: "a-swim" },
+    { e: "🦆", n: "اردک", a: "a-wiggle" },
+    { e: "🐭", n: "موش", a: "a-pulse" },
+    { e: "🐷", n: "خوک", a: "a-bounce" },
+    { e: "🦒", n: "زرافه", a: "a-sway" }
+  ];
+  const ROUNDS = 10;
+
+  // متن‌های تبریک (هر بار یکی جدید) و متن‌های جواب غلط (تصادفی)
+  const GOOD = [
+    "آفرین! عالی بود 🎉", "دمت گرم، درست گفتی! 👏", "چه باهوش! 🌟", "ماشالله به تو! 🥳",
+    "فوق‌العاده‌ای! 🚀", "درسته درسته درسته! 🎈", "تو یه ستاره‌ای! ⭐", "بازم درست! نابغه‌ای! 🧠",
+    "هورا! جواب درست! 🎊", "احسنت! ادامه بده 💪", "خیلی خوب بود! 😍", "عاشق این جوابتم! 💖",
+    "قهرمان حیوان‌ها تویی! 🏅", "دست مریزاد! 🌈"
+  ];
+  const BAD = [
+    "نه، یه بار دیگه امتحان کن 🙂", "تقریباً! دوباره دقت کن 🤔", "اشکالی نداره، دوباره بزن 💪",
+    "این نبود! یکی دیگه رو امتحان کن 🔍", "نزدیک بود! باز هم تلاش کن 🌼", "هنوز نه! تو می‌تونی 😊",
+    "اوپس! یه بار دیگه خوب نگاه کن 👀", "نترس، دوباره امتحان کن 🍀"
+  ];
+
+  const faDigits = s => String(s).replace(/\d/g, d => "۰۱۲۳۴۵۶۷۸۹"[d]);
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const $ = id => document.getElementById(id);
+
+  let order, index, score, missed, goodQueue = [], lastBad = -1;
+
+  // تبریک جدید: تا همه‌ی متن‌ها تموم نشده تکراری نمیاد
+  function nextGood() {
+    if (!goodQueue.length) goodQueue = shuffle(GOOD);
+    return goodQueue.pop();
+  }
+  // متن غلط تصادفی (پشت سر هم تکراری نمی‌شود)
+  function randomBad() {
+    let i;
+    do { i = Math.floor(Math.random() * BAD.length); } while (i === lastBad && BAD.length > 1);
+    lastBad = i;
+    return BAD[i];
+  }
+
+  let ctx;
+  function beep(freqs) {
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      freqs.forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = f; o.type = "sine";
+        o.connect(g); g.connect(ctx.destination);
+        const t = ctx.currentTime + i * 0.13;
+        g.gain.setValueAtTime(0.15, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+        o.start(t); o.stop(t + 0.13);
+      });
+    } catch (e) {}
+  }
+
+  function start() {
+    order = shuffle(ANIMALS).slice(0, ROUNDS);
+    index = 0; score = 0;
+    $("end").style.display = "none";
+    $("game").style.display = "block";
+    show();
+  }
+
+  function show() {
+    const q = order[index];
+    missed = false;
+    const an = $("animal");
+    an.textContent = q.e;
+    an.className = "animal " + q.a;
+    $("msg").textContent = ""; $("msg").className = "msg";
+    $("nextWrap").style.display = "none";
+    $("score").textContent = faDigits(score);
+    $("bar").style.width = (index / order.length * 100) + "%";
+    const others = shuffle(ANIMALS.filter(x => x !== q)).slice(0, 3).map(x => x.n);
+    const box = $("answers");
+    box.className = "answers"; box.innerHTML = "";
+    shuffle([q.n, ...others]).forEach(name => {
+      const b = document.createElement("button");
+      b.textContent = name;
+      b.onclick = () => pick(b, name === q.n);
+      box.appendChild(b);
+    });
+  }
+
+  function pick(btn, correct) {
+    const msg = $("msg");
+    if (correct) {
+      btn.classList.add("right");
+      $("answers").classList.add("locked");
+      if (!missed) { score++; $("score").textContent = faDigits(score); }
+      msg.textContent = nextGood(); msg.className = "msg good";
+      $("animal").className = "animal happy";
+      beep([523, 659, 784]);
+      $("next").textContent = index === order.length - 1 ? "ببین چند تا درست گفتی" : "حیوان بعدی";
+      $("nextWrap").style.display = "block";
+    } else {
+      missed = true;
+      btn.classList.add("wrong");
+      btn.style.pointerEvents = "none";
+      msg.textContent = randomBad(); msg.className = "msg bad";
+      beep([300]);
+    }
+  }
+
+  function next() {
+    index++;
+    if (index >= order.length) return finish();
+    show();
+  }
+
+  function finish() {
+    $("game").style.display = "none";
+    $("end").style.display = "flex";
+    $("final").textContent = "تو " + faDigits(score) + " حیوان از " + faDigits(order.length) + " تا رو بار اول درست شناختی!";
+    beep([523, 659, 784, 1047]);
+  }
+
+  $("next").onclick = next;
+  $("again").onclick = start;
+  start();
+</script>
+</body>
+</html>
